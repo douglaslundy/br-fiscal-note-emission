@@ -1,0 +1,48 @@
+{
+  "skill_name": "br-fiscal-note-emission",
+  "evals": [
+    {
+      "id": 1,
+      "name": "build-from-scratch-pharmacy",
+      "prompt": "Estou começando um sistema de gestão pra uma rede de farmácias (Laravel + Postgres). Preciso implementar emissão de NF-e (venda de produtos) e NFS-e (quando cobramos por aplicação de injetáveis, por exemplo) usando a Focus NFe. Nunca mexi com nota fiscal eletrônica antes. Como eu estruturo esse módulo do zero? Pode me dar um plano de arquitetura e os pontos de atenção mais importantes antes de eu começar a codar.",
+      "expected_output": "A layered architecture (provider abstraction separate from tax-rule resolution), an explicit 'never guess a fiscal value' principle with concrete examples (block-and-ask pattern), correct CFOP/CST-CSOSN distinction for NF-e vs correct ISS-por-dentro handling for NFS-e, awareness that Focus NFe responses need polling despite looking synchronous, and homologação vs produção guidance.",
+      "files": [],
+      "assertions": [
+        { "text": "Recommends separating provider/vendor-adapter code from tax-rule resolution logic (an architecture boundary), not just 'call the Focus API'" },
+        { "text": "States explicitly that fiscal values must never be guessed/defaulted when missing — should block/ask instead" },
+        { "text": "Distinguishes that NF-e (goods) uses CFOP/ICMS rules while NFS-e (services) uses ISS rules — not treated as the same computation" },
+        { "text": "Explains ISS is computed 'por dentro' (embedded in the price), not added on top of the subtotal" },
+        { "text": "Notes that Focus NFe responses need to be polled/checked for final status, not treated as synchronous just because the initial call returns fast" },
+        { "text": "Distinguishes homologação vs. produção as separate environments with separate data, not just separate API keys" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "extend-existing-discount-nodejs",
+      "prompt": "Tenho um e-commerce em Node/Express já integrado com a Focus NFe pra emitir NF-e das vendas. Agora quero adicionar um desconto por cupom antes de emitir a nota. Não sei se isso mexe só no valor total ou se afeta outras coisas do documento fiscal. Como eu implemento isso com segurança?",
+      "expected_output": "Should flag that discount changes the tax base (not just a display total), warn about rounding/float precision, and not conflate a discount change with a CFOP change.",
+      "files": [],
+      "assertions": [
+        { "text": "Explicitly says the discount changes the tax base used for the fiscal document, not just a cosmetic display total" },
+        { "text": "Warns about rounding/floating-point precision when subtracting the discount before it feeds into fiscal calculations" },
+        { "text": "Does not just say 'subtract X% from the total' without any caveat about where in the pipeline that has to happen" },
+        { "text": "Mentions validating/blocking on missing or inconsistent data rather than assuming a safe default when applying the discount" },
+        { "text": "Shows awareness that CFOP itself is about operation type (not value), so reassures or clarifies whether CFOP needs re-resolution — doesn't conflate discount with a CFOP change" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "debug-stuck-processando-spedy",
+      "prompt": "Um cliente meu relatou que uma nota fiscal (NFC-e) emitida via Spedy ficou travada em status 'processando' há 3 dias e nada aconteceu — o cliente já pagou e o produto já saiu, mas a nota nunca autorizou nem rejeitou. Como eu investigo isso?",
+      "expected_output": "A structured triage distinguishing polling failure from real vendor status, checking the raw vendor response, and not jumping straight to cancel/reissue.",
+      "files": [],
+      "assertions": [
+        { "text": "First step is getting the exact document reference / integrationId, not guessing from a vague description" },
+        { "text": "Explicitly distinguishes 'we never got a real answer back from Spedy' (transient/retryable) from 'Spedy genuinely returned processando' as different situations" },
+        { "text": "Recommends checking the actual/raw response from Spedy's status-check call, not just trusting the status stored in the local database" },
+        { "text": "Does not jump straight to 'just cancel and reissue' before diagnosing root cause" },
+        { "text": "Mentions the Spedy-specific quirk that there's no GET-by-reference — you poll a list endpoint filtered by your own integrationId" }
+      ]
+    }
+  ]
+}
