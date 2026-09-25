@@ -167,3 +167,10 @@ There's no universally-correct choice — it's a real trade-off:
   ever need one engine for one fixed project — YAGNI still applies; the
   interface earns its keep once you actually need to swap or add a second
   engine, not before.
+
+## Where each engine takes the "additional information" text
+
+See the field table in `domain-concepts.md` ("Additional information on the
+document"): NFePHP `infCpl` / `xInfComp`; Spedy `additionalInformation`; Focus
+`informacoes_adicionais_contribuinte` for NF-e/NFC-e, and — because Focus
+NFS-e municipal has no such field — the end of `servico.discriminacao`.

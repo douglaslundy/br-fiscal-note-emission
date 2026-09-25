@@ -16,7 +16,7 @@ Brazilian fiscal documents are legal instruments, not receipts. A wrong value is
 - `references/domain-concepts.md` — CFOP, CST/CSOSN, CRT, origem, ISS, ambiente, numeração, contingência, with legal citations.
 - `references/other-documents.md` — CT-e, MDF-e, and the rest of the DF-e family, including NFS-e's transition to a national standard.
 - `references/reliability-patterns.md` — idempotency, status reconciliation, fail-fast schema validation, certificate expiry alerting, and a repeatable recipe for caching a vendor's real, verified schema locally.
-- `references/pitfalls.md` — 19 real production bugs, each as symptom → root cause → fix → generalized lesson.
+- `references/pitfalls.md` — 25 real production bugs, each as symptom → root cause → fix → generalized lesson.
 - `references/audit-checklist.md` — a systematic method for auditing an *existing* fiscal integration end to end, so a review catches a whole class of bug in one pass instead of finding a different one each round.
 - `references/debugging-checklist.md` — step-by-step triage for a single reported fiscal problem.
 - `assets/` — cached, dated, source-cited references: a SEFAZ `cStat` rejection-code table, and verified schema/field caches for Focus NFe, Spedy, and the installed NFePHP (`sped-nfe`) package.

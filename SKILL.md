@@ -89,6 +89,11 @@ one município vs. many), not a one-line fix:
   existing vendor account, an A1 certificate already in hand, a hard
   no-per-document-fee requirement? See the decision table below, but a real
   constraint the user already has beats a theoretical trade-off analysis.
+- **Does any large/corporate/public buyer impose extra per-note requirements**
+  (statement of tax regime, vehicle/contract data, XML delivery, a specific
+  service code, a specific recipient CNPJ)? Get them in writing and map each
+  to a field before designing — see "Additional information on the document"
+  in `domain-concepts.md`.
 - **Only NF-e/NFS-e/NFC-e, or does the business also move freight (CT-e/
   MDF-e) or need one of the niche DF-e types?** Most projects only need the
   three this skill focuses on — don't build for CT-e/MDF-e speculatively.
@@ -137,6 +142,31 @@ generalized lesson) is already written down. If there's a real `cStat`
 rejection code involved, check it against `assets/cstat-table.md` — don't
 guess what a code number means from the number alone.
 
+## Baseline every new fiscal tool should ship with
+
+These come from real incidents (see `references/pitfalls.md` #20–#25) — build
+them in from day one instead of discovering them in production:
+
+- **One builder for "additional information" text** (Simples statement,
+  vehicle/customer data, work-order free text) shared by every engine and
+  document type; each engine only decides where it goes
+  (`domain-concepts.md` has the per-engine field table). Sanitize it to the
+  schema's character set and length (#20).
+- **Store the access key exactly as the authority defines it** — NFS-e
+  national: 50 digits, never the XML `Id` with its `NFS` prefix (#21).
+- **Numbering recovery**: on `cStat=539`, consult the occupying key and skip the
+  number only if it is cancelled (#22); never delete fiscal rows without
+  accounting for numbers.
+- **PDFs print what was authorized** (from the XML or a saved snapshot), not a
+  parallel column (#23).
+- **Mirror the authority's input limits at the UI and the API** (cancellation
+  justification 15–255) and name downloads by document model from the server
+  (#24).
+- **Make the environment unmistakable**: show it where the user emits, audit
+  changes to it, confirm before production, and read `tpAmb` from the XML when
+  validating (#25).
+- **Validate one real authorized XML per document type against the official
+  XSD** before go-live (`audit-checklist.md` Check 8).
 ## Engine decision table (first pass — read `references/engines.md` for detail)
 
 | | Focus NFe | Spedy | NFePHP (direto SEFAZ) |
@@ -211,7 +241,7 @@ a spec to port against even in another language.
   regulator that changes the contract on its own schedule — general
   patterns, sourced from how mature systems (Stripe, EU/Mexico e-invoicing)
   solve the same class of problem
-- `references/pitfalls.md` — 19 real production bugs, each as symptom → root
+- `references/pitfalls.md` — 25 real production bugs, each as symptom → root
   cause → fix → generalized lesson. Read before writing new fiscal code, not
   just when debugging.
 - `references/audit-checklist.md` — systematic checklist for validating an

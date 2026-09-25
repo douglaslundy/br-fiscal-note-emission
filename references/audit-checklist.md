@@ -148,3 +148,34 @@ fiscal field/indicator the project sends: which document types and engines
 send it, whether each one derives it the same correct way, and — for
 anything you couldn't verify against a citable source — who confirmed it's
 actually true for this business.
+
+## Check 7 — The printed document must come from what was authorized
+
+For every document type and engine: find where the PDF/DANFE/e-mail body gets
+each field and confirm it is read from the **authorized XML** (or a snapshot
+saved at emission), not from a parallel column that merely usually matches.
+Render the real template from a real authorized XML in a test (pitfall #23).
+
+## Check 8 — Validate real authorized XMLs against the official XSD
+
+Take one authorized XML per document type and validate it with the schema
+shipped in the library (`DOMDocument::schemaValidate`). Gotchas learned the
+hard way:
+- libxml implements XSD 1.0 — a `pattern` using regex lookahead (the NFS-e
+  national `^(?!0{1,5}$)\d{1,5}$`) fails to *compile*. Validate a **copy** of
+  the schema with an equivalent rewrite; never edit `vendor/`.
+- NF-e: validate `nfeProc` against `procNFe_v4.00.xsd` (not `NFe`), or the
+  protocol block is skipped.
+- A mismatch between the bundled XSD and what the authority actually accepts
+  (e.g. `cNBS` required by the bundled XSD but authorized without it) is a
+  finding to **report**, not to "fix" by inventing a value — see Check 6
+  (never fabricate missing regulatory data).
+- Read `tpAmb` from the XML while you're there (pitfall #25).
+
+## Check 9 — Numbering drift against the authority
+
+List the numbers the authority knows (query a sample of recent keys) versus
+the local counter/rows. Any local deletion of fiscal rows, restore from
+backup, or manual counter change can put the counter behind what SEFAZ
+remembers (pitfall #22). The automatic recovery must confirm the occupying
+document is cancelled before skipping a number.

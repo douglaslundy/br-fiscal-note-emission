@@ -379,3 +379,110 @@ documentation into a reference cache) that happened to re-read the live
 docs for a document type the original cleanup hadn't — a reminder that any
 time you're re-reading a vendor's real docs for any reason, it's worth a
 quick pass checking recent "cleanup" changes against what you're reading.
+
+## 20. Free text typed by a human went straight into a schema-constrained field, and the whole document was rejected for one character
+
+**Symptom**: NFS-e (national standard) rejected at the ADN with `E1235 — Falha
+no esquema XML do DF-e`, complement: *"The value 'Empresa optante pelo Simples
+Nacional. Placa: QXI3449 | Modelo: HONDA CG 160 CARGO C — 2019 — QXI3449 |
+KM: 40332' is invalid according to its datatype TSDescInfCompl — The Pattern
+constraint failed."* Nothing looked wrong in the text.
+**Root cause**: the national NFS-e schema's `TSString` only accepts characters
+`!` to `ÿ` (`[!-ÿ]{1}[ -ÿ]{0,}[!-ÿ]{1}|[!-ÿ]{1}` — Latin-1, no leading/trailing
+space). The vehicle model was typed by a person in the work order with an **em
+dash (U+2014)**, outside that range. The additional-information text was built
+from that free text and sent unsanitized.
+**Fix**: one sanitizer in the single builder of the text (`—`/`–` → `-`, curly
+quotes → straight, emoji/CJK/C1 controls dropped, line breaks and NBSP → space,
+runs of spaces collapsed, trimmed, then truncated to the field limit), plus a
+unit test that runs the *real failing string* against the XSD's own regex.
+**Lesson**: every string a human can type (vehicle model, service description,
+observations, customer name) that ends up in an XML field is untrusted input
+against that field's `pattern`. Sanitize in ONE place shared by all engines,
+not per engine; and test with the exact production value that failed.
+
+## 21. An XML `Id` attribute was stored, displayed and passed around as if it were the access key
+
+**Symptom**: the issued NFS-e showed a "chave de acesso" starting with
+`NFS313050…` (53 characters). The user reported it: *"esse NFS no começo não
+deveria sair"*.
+**Root cause**: in the national NFS-e, `infNFSe/@Id` is `"NFS"` + the 50-digit
+key — the letters exist only because an XML `ID` must start with a letter.
+The engine stored the whole `Id` as `chave_acesso`. (A related workaround
+already existed for *querying* — strip `NFS` before calling the API — but the
+stored/displayed value was never normalized at the source.)
+**Fix**: store only the 50 digits at the source (both on issue and on query),
+keep the normalizer tolerant of both forms, and add a data migration for
+already-issued notes.
+**Lesson**: a workaround applied at the consumer (strip before querying)
+while the producer keeps writing the wrong value is a bug waiting to
+resurface in every new consumer (screen, PDF, e-mail, export). Fix the value
+where it's created. Validate what you store against the authority's own
+definition of the key (NFS-e: 50 digits; NF-e: 44 digits with mod-11 check
+digit).
+
+## 22. "Retry with the reserved number" looped forever on `cStat=539` because the local counter had drifted from the authority's memory
+
+**Symptom**: NF-e rejected `cStat=539: Duplicidade de NF-e, com diferença na
+Chave de Acesso [chNFe: …]`. Retrying the same note produced the same error
+every time.
+**Root cause**: number 15 was already used at SEFAZ by an old test NF-e (later
+**cancelled**) that the local database no longer had — test rows had been
+deleted locally while the authority remembers them forever, and **a cancelled
+NF-e does not release its number**. The engine correctly reused the number
+already reserved for a rejected note (so as not to burn numbers), which is
+exactly what made every retry hit 539.
+**Fix**: on 539, read `chNFe` from the message, query that key, and **only if
+it is `CANCELADA`** allocate the next number and re-send (bounded attempts).
+If it is `AUTORIZADA` do NOT skip: it may be our own earlier attempt whose
+response was lost, and skipping would issue a second real document.
+**Lesson**: local numbering is a cache of the authority's state, not the
+source of truth. Never delete fiscal rows (even homologação ones) without
+accounting for the numbers they consumed; and any automatic "skip the number"
+logic must first prove the occupying document isn't ours.
+
+## 23. The data was correct in the XML but the printed document (PDF/DANFE) came from a different field
+
+**Symptom**: the required text (Simples, plate/model/KM) was in the authorized
+XML (`infCpl` / `xInfComp`), yet on neither PDF.
+**Root cause**: the locally generated PDF templates printed `observacoes`
+(a different column), never the field that was actually sent to the
+government.
+**Fix**: the PDF reads the text from the authorized XML (fallback: a
+snapshot of what was sent, for engines whose XML doesn't echo it back).
+**Lesson**: what the customer sees must be derived from what was authorized,
+not from a parallel field that "usually has the same value". Add a test that
+renders the real template from a real authorized XML.
+
+## 24. Validation and file naming on the client were weaker than / different from the authority and the server
+
+**Symptom (a)**: cancelling with the justification "Era um teste" (12 chars)
+failed at SEFAZ with an unclear error. **Symptom (b)**: every download was
+named `NF-<n>` — service, product and consumer notes indistinguishable.
+**Root cause**: (a) UI and API both enforced `min 10`, but the authority
+requires **15–255** characters (`xJust` of the NF-e cancellation event; the
+NFS-e national cancellation event follows the same range). (b) the server
+already sent the right name in `Content-Disposition` (`NFSe-15.pdf`,
+`NFe-17.xml`, `NFCe-3.pdf`), but four different frontend call sites
+overrode it with a hardcoded name.
+**Fix**: min 15 / max 255 at both layers with a live counter; one shared
+helper that trusts the server's filename and falls back by model.
+**Lesson**: copy the authority's limits into the first layer the user
+touches. And a client should never invent a name the server already decided;
+if four places do the same thing, extract one helper.
+
+## 25. A real, legally valid document was issued in production during a homologação test session because the environment flag changed unnoticed
+
+**Symptom**: while validating notes issued in homologação, the latest NFS-e
+(#2, tomador = a real corporate customer) turned out to have `tpAmb=1`
+(production) and status AUTORIZADA — it was a real document.
+**Root cause**: the per-company environment is a single setting; it was
+switched between two emissions, with no audit-log entry for that setting and
+nothing on the emission screen making the current environment obvious.
+**Fix / practice**: when validating anything, read `tpAmb` from the XML (and
+the stored `ambiente` column) instead of assuming. Product-side: show the
+active environment prominently where the user emits, require an explicit
+confirmation for production, and audit-log changes to the environment
+setting.
+**Lesson**: "which environment did this document actually go to" must be
+answerable from the document itself, and changing it must leave a trace.

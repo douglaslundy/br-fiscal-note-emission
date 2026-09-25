@@ -134,3 +134,67 @@ schema conditionally requires field B whenever field A has a certain value,
 encode that as an explicit pre-emission check, not an assumption that
 supporting field A automatically means you're already sending field B
 correctly (see `pitfalls.md` #3 for a real CEST/ICMS-ST version of this).
+
+## Additional information on the document (infCpl / xInfComp) — corporate customers
+
+Large buyers (e.g. Correios, verified 2026-09-25) impose per-note requirements
+that go beyond the fiscal minimum. The pattern that worked, generalized:
+
+| Requirement (as stated by the buyer) | Where it goes |
+|---|---|
+| "Company is Simples Nacional" on **both** goods and service notes | additional-information field of each note (only when the regime is Simples/MEI — derive from CRT, never hardcode) |
+| Vehicle plate, model, odometer on each note | same field, from the work order; free-text extra from the work order (contract/PO number) appended |
+| Service note under LC 116 item **14.01** | NFS-e national: `cTribNac` = `140101` (6 digits: item+subitem+desdobro) — the classic "1401" is rejected as a schema error |
+| XML of each note | keep the authorized XML; offer XML alongside PDF, including in the bulk ZIP |
+| National-standard NFS-e | issue through the national system (ADN); for ME/EPP in Simples it becomes mandatory 2026-11-01 (Receita Federal) |
+| Buyer's CNPJ as the recipient | just register the customer; the recipient block already takes CNPJ |
+
+Build the text in **one** function shared by every engine and every document
+type (`InformacoesComplementaresResolver` in the reference project): regime
+sentence → vehicle → work-order free text → (NF-e only) note observations.
+Then sanitize it (pitfall #20), truncate to the target field, and let each
+engine only decide *where* to put it. Persist a snapshot of what was sent
+(engines don't always echo it in the XML) and print the PDF from it.
+
+Field per engine (each confirmed in the vendor's own docs/schema, 2026-09-25):
+
+| Engine / document | Field | Limit |
+|---|---|---|
+| NFePHP NF-e / NFC-e | `taginfAdic(['infCpl' => …])` | 5000 |
+| NFePHP NFS-e national | DPS `serv/infoCompl/xInfComp` (`infoCompl` → `['xInfComp' => …]`) | schema doc says 2000, the lib's DTO says 255 — use 255 |
+| Spedy NF-e / NFC-e | `additionalInformation` ("Informações adicionais [infCpl]") | — |
+| Spedy NFS-e | `additionalInformation` ("Informações adicionais") | — |
+| Focus NF-e / NFC-e | `informacoes_adicionais_contribuinte` → `infCpl` | String[1-5000] |
+| Focus NFS-e municipal (`/v2/nfse`) | **no dedicated field** — append to `servico.discriminacao` | varies by município |
+
+Not covered by the reference project: Spedy's `/orders` mode
+(`calculo_tributario_modo = AUTOMATICO_PROVEDOR`) — its invoice DTO also has an
+`additionalInformation`, but that flow was left out; check it before enabling
+that mode for this kind of customer.
+
+Not verified (don't assume): whether the national NFS-e will start requiring
+`cNBS` for domestic services. In 2026-09 the ADN authorized production notes
+without it, while the XSD bundled with `nfse-nacional/nfse-php` (v1.01) lists
+it as required in `cServ`. The authority's behavior wins, but re-check the
+current technical note before a go-live.
+
+## Cancellation justification
+
+`xJust` (NF-e cancellation event) and the NFS-e national cancellation reason:
+**15 to 255 characters**. Enforce it in the UI and in the API — a shorter text
+passes a naive `min:10` and is only refused by the authority, with an unclear
+error (pitfall #24).
+
+## NFS-e national access key
+
+50 digits: `cLocEmi(7) + ambiente gerador(1) + tipo de inscrição(1) +
+inscrição federal(14) + nNFSe(13) + AAMM(4) + código numérico(9) + DV(1)`.
+The `"NFS"` prefix seen in `infNFSe/@Id` is XML syntax, not part of the key
+(pitfall #21). Whether a note is homologação or produção is **not** in the
+key — read `tpAmb` in the XML.
+
+## Document file names
+
+Name downloads by document model: `NFSe-<n>`, `NFe-<n>`, `NFCe-<n>` (`.pdf` /
+`.xml`), decided by the server in `Content-Disposition`; the client uses that
+name and only falls back by model (pitfall #24).
