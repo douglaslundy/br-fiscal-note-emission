@@ -179,3 +179,24 @@ the local counter/rows. Any local deletion of fiscal rows, restore from
 backup, or manual counter change can put the counter behind what SEFAZ
 remembers (pitfall #22). The automatic recovery must confirm the occupying
 document is cancelled before skipping a number.
+
+## Check 10 — Cross-engine payload parity, driven by ONE input
+
+Build a single `NotaFiscalData` for the same business case and produce what
+each engine would send (NFePhp: DPS via `DpsXmlBuilder` / NF-e XML; Spedy and
+Focus: the payload builders). Put the results side by side and compare every
+field that must mean the same thing: issuer/recipient, amounts, service code,
+description, regime flags, additional-information text. Then, for each *field
+that differs*, open the vendor's schema for **that endpoint** and check type,
+enum and format (pitfall #26: an enum of codes sent as text; a regime flag
+computed differently). Also compare the payload with the authorized XML the
+authority returned for a real emission — they must carry the same information.
+Never treat "the test passes" as proof: assert against the vendor document.
+
+## Check 11 — Nothing private in a public repository
+
+Before publishing (code, fixtures, skill, docs): `gh repo view --json
+visibility`; grep the diff for real CNPJ/CPF, names, addresses, phones,
+e-mails, plates and access keys (a key embeds the issuer's CNPJ); make sure
+source documents used as models are `.gitignore`d (`git check-ignore -v`); stage
+by explicit path (pitfall #27).

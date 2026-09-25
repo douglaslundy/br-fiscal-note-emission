@@ -167,6 +167,13 @@ them in from day one instead of discovering them in production:
   validating (#25).
 - **Validate one real authorized XML per document type against the official
   XSD** before go-live (`audit-checklist.md` Check 8).
+- **Run one input through every engine and compare** — enum codes vs. text,
+  shared regime resolver, same information in each payload (#26, Check 10).
+- **Keep private fiscal data out of public repos**: anonymized fixtures, source
+  PDFs in `.gitignore`, explicit `git add` paths, `gh repo view --json
+  visibility` before publishing (#27, Check 11).
+- **Client-facing printed document = clone of the official one** when the
+  customer expects it (`references/danfse-clone.md`).
 ## Engine decision table (first pass — read `references/engines.md` for detail)
 
 | | Focus NFe | Spedy | NFePHP (direto SEFAZ) |
@@ -241,9 +248,15 @@ a spec to port against even in another language.
   regulator that changes the contract on its own schedule — general
   patterns, sourced from how mature systems (Stripe, EU/Mexico e-invoicing)
   solve the same class of problem
-- `references/pitfalls.md` — 25 real production bugs, each as symptom → root
+- `references/pitfalls.md` — 27 real production bugs, each as symptom → root
   cause → fix → generalized lesson. Read before writing new fiscal code, not
   just when debugging.
+- `references/danfse-clone.md` — how to clone an official auxiliary document
+  (worked example: the DANFSe v2.0 of the national NFS-e) so it matches the
+  government's PDF: extract geometry/fonts/QR with `mupdf`, rebuild by baseline
+  in Dompdf, map every field from the authorized XML, and prove the match
+  (text diff, run-by-run positions, geometry). Includes the privacy rules for
+  the reference document.
 - `references/audit-checklist.md` — systematic checklist for validating an
   *existing* fiscal integration end to end (cross-document-type and
   cross-engine mirroring, sibling-lock consistency, enum completeness, and

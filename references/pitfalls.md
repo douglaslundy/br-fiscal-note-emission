@@ -384,7 +384,7 @@ quick pass checking recent "cleanup" changes against what you're reading.
 
 **Symptom**: NFS-e (national standard) rejected at the ADN with `E1235 — Falha
 no esquema XML do DF-e`, complement: *"The value 'Empresa optante pelo Simples
-Nacional. Placa: QXI3449 | Modelo: HONDA CG 160 CARGO C — 2019 — QXI3449 |
+Nacional. Placa: ABC1D23 | Modelo: HONDA CG 160 CARGO C — 2019 — ABC1D23 |
 KM: 40332' is invalid according to its datatype TSDescInfCompl — The Pattern
 constraint failed."* Nothing looked wrong in the text.
 **Root cause**: the national NFS-e schema's `TSString` only accepts characters
@@ -486,3 +486,52 @@ confirmation for production, and audit-log changes to the environment
 setting.
 **Lesson**: "which environment did this document actually go to" must be
 answerable from the document itself, and changing it must leave a trace.
+
+## 26. A vendor field that takes an enum CODE was sent free text, and a regime flag drifted from the shared resolver — found only by running the same input through every engine
+
+**Symptom**: nothing failed loudly — the audit that compared the three NFS-e
+engines side by side (same `NotaFiscalData` → NFePhp DPS, Spedy payload, Focus
+payload) showed the Focus payload was the odd one out.
+**Root cause (two independent bugs, both in the Focus NFS-e payload)**:
+(1) `natureza_operacao` was sent as `"Prestação de Serviços"`, but the vendor's
+own schema for NFS-e defines it as an **enum of codes `"1"`–`"6"`** (default
+`"1"` = tributação no município); the *same field name* on the NF-e endpoint is
+free text, which is how the wrong assumption got copied across document types.
+(2) `optante_simples_nacional` was `str_contains($regime, 'simples')`, so a shop
+registered as just `MEI` went out as **not** Simples — while the shared
+`CrtResolver` (used by the other two engines) already treated `MEI` as Simples.
+A third, smaller one: `data_emissao` is a date-time in the docs but a bare
+date was sent.
+**Fix**: code `"1"`; use the shared resolver (and `regime_especial_tributacao =
+"5"` for MEI, per the vendor's enum); ISO 8601 date-time. Tests updated — note
+one existing test had *asserted the wrong text*, i.e. it had been written to
+match the code, not the vendor contract.
+**Lesson**: (a) the same field name can be free text on one document type and a
+code list on its sibling — check the enum/type per endpoint in the vendor's
+schema. (b) Any classification (regime, CRT) must come from ONE resolver used
+by every engine — a per-engine `str_contains` will drift. (c) Add a
+**cross-engine parity check** to the audit: one input, all engines, compare
+the fields that must mean the same thing (`audit-checklist.md` Check 10). (d) A
+test that asserts the current output is not evidence the output is right —
+assert against the vendor document.
+
+## 27. Real customer/company data ended up in tests, fixtures and docs of a PUBLIC repository
+
+**Symptom**: while cloning an official document layout, the working fixtures
+contained a real company's CNPJ/address/phone/e-mail, a customer's CNPJ and a
+vehicle plate — and both the project repo and this skill repo turned out to be
+**public** on GitHub. The private source PDF was one `git add -A` away from
+being published.
+**Root cause**: fixtures and test strings were taken straight from a real
+authorized document because that is the fastest way to get a *structurally
+correct* sample.
+**Fix**: anonymize fixtures (fictional CNPJs/names/address, plate `ABC1D23`)
+while keeping the real structure; keep the private source document out of
+version control with an explicit `.gitignore` entry (`git check-ignore -v` to
+prove it); stage files by explicit path, never `git add -A` in a repo that has
+private inputs lying around; check `gh repo view --json visibility` before
+publishing anything (including skills).
+**Lesson**: real fiscal documents are private data (identities, addresses,
+access keys that embed a CNPJ). Extract the *structure* into a fixture, never
+the data; and treat "is this repo public?" as a step of every publish. Git
+history is forever — prevention is the only cheap fix.
