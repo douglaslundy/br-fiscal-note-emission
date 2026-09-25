@@ -6,6 +6,10 @@ layout whose every text run matched the official PDF to within 0.1 pt
 (2026-09-25). It is generic — the same steps apply to a DANFE, a cupom NFC-e,
 or any layout you have a reference PDF for.
 
+The result of applying this method to the DANFSe is shipped ready to copy in
+`assets/pdf-layouts/danfse/` (see that folder's README) — use it instead of
+redoing the extraction for the national NFS-e.
+
 Privacy first: the reference PDF is a real, private fiscal document. Never
 commit it (`.gitignore` it), never paste its data into fixtures, tests or this
 skill; keep only the *structure* (see pitfall #27).

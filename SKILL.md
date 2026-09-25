@@ -173,7 +173,8 @@ them in from day one instead of discovering them in production:
   PDFs in `.gitignore`, explicit `git add` paths, `gh repo view --json
   visibility` before publishing (#27, Check 11).
 - **Client-facing printed document = clone of the official one** when the
-  customer expects it (`references/danfse-clone.md`).
+  customer expects it: copy `assets/pdf-layouts/` (DANFSe already cloned and
+  verified) or apply `references/danfse-clone.md` to the customer's reference PDF.
 ## Engine decision table (first pass — read `references/engines.md` for detail)
 
 | | Focus NFe | Spedy | NFePHP (direto SEFAZ) |
@@ -251,6 +252,11 @@ a spec to port against even in another language.
 - `references/pitfalls.md` — 27 real production bugs, each as symptom → root
   cause → fix → generalized lesson. Read before writing new fiscal code, not
   just when debugging.
+- `assets/pdf-layouts/` — **ready-to-copy printed-document layouts**: the DANFSe
+  v2.0 clone (renderer with all coordinates + field mapping, Blade, logo,
+  anonymized XML fixture, test), the DANFE and the NFC-e cupom templates, and the
+  wiring that picks the template per document. Start here when the user needs
+  the PDF of a note; its README says what is a verified clone and what is not.
 - `references/danfse-clone.md` — how to clone an official auxiliary document
   (worked example: the DANFSe v2.0 of the national NFS-e) so it matches the
   government's PDF: extract geometry/fonts/QR with `mupdf`, rebuild by baseline
