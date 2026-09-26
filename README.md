@@ -17,6 +17,7 @@ Brazilian fiscal documents are legal instruments, not receipts. A wrong value is
 - `references/other-documents.md` — CT-e, MDF-e, and the rest of the DF-e family, including NFS-e's transition to a national standard.
 - `references/reliability-patterns.md` — idempotency, status reconciliation, fail-fast schema validation, certificate expiry alerting, and a repeatable recipe for caching a vendor's real, verified schema locally.
 - `references/pitfalls.md` — 27 real production bugs, each as symptom → root cause → fix → generalized lesson.
+- `references/reference-system-map.md` — scope checklist of a complete fiscal module (pipeline, orchestrator, jobs, contingency, received notes, product fiscal data, SaaS layer, screens, known risks).
 - `references/nfse-nacional-direct.md` — issuing the national NFS-e directly (no vendor) with `nfse-nacional/nfse-php`: engine selection, flow, DPS mapping with the real ADN rejections, key vs. `Id`, cancel event.
 - `references/danfse-clone.md` — how to clone an official printed document (DANFSe v2.0 worked example) and prove the match.
 - `assets/pdf-layouts/` — ready-to-copy printed layouts: verified DANFSe clone, DANFE, NFC-e cupom and the template-selection wiring.

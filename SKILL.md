@@ -257,6 +257,14 @@ a spec to port against even in another language.
   anonymized XML fixture, test), the DANFE and the NFC-e cupom templates, and the
   wiring that picks the template per document. Start here when the user needs
   the PDF of a note; its README says what is a verified clone and what is not.
+- `references/reference-system-map.md` — **scope checklist**: everything a
+  complete production fiscal module contains, module by module (emission
+  pipeline and status machine, NF-e/NFC-e/NFS-e selection and pre-emission
+  blocks, work-order orchestrator, scheduled jobs, contingency, received notes
+  and purchase entry, product fiscal data policies, friendly rejection
+  messages, SaaS layer, screens, known risks), with pointers to the deep-dive
+  file for each. Read it when the user says "build/extend a fiscal tool" to
+  decide scope, and to check nothing is forgotten.
 - `references/nfse-nacional-direct.md` — how the national NFS-e is emitted
   directly (no vendor) with `nfse-nacional/nfse-php`: engine selection, flow,
   DPS field mapping with the real ADN rejections (`E0120`, `E0128`, `E0625`,
