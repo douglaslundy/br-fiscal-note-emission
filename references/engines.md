@@ -105,7 +105,11 @@ what failure modes you have to design around.
   `sped-nfse` package** — only two narrow, município-model-specific ones,
   one self-marked "ABANDONADO" (`sped-nfse-dsf`) and one stale since 2023
   (`sped-nfse-ginfes`), neither supporting NFS-e Nacional. See
-  `other-documents.md` for detail. Lesson generalized in `pitfalls.md`
+  `other-documents.md` for detail. **But the national NFS-e itself CAN be issued
+  directly, without a vendor, with a separate package,
+  `nfse-nacional/nfse-php`** — that is what the reference project's "NFEPHP"
+  engine uses for NFS-e (and `sped-nfe` for NF-e/NFC-e). See
+  `nfse-nacional-direct.md`. Lesson generalized in `pitfalls.md`
   #18/`audit-checklist.md` Check 5: a maturity/support claim about a
   dependency is exactly the kind of assertion to re-verify live, not carry
   forward from an earlier research pass.

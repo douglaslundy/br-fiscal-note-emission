@@ -182,7 +182,7 @@ them in from day one instead of discovering them in production:
 | What it is | REST API vendor | REST API vendor | PHP library talking to SEFAZ directly |
 | Needs | API token | API token | A1 (.pfx) certificate |
 | Vendor dependency | Yes | Yes | No (open source, self-hosted) |
-| Docs types | NF-e, NFC-e, NFS-e | NF-e, NFC-e, NFS-e | NF-e, NFC-e, NFS-e (via sister libs) |
+| Docs types | NF-e, NFC-e, NFS-e | NF-e, NFC-e, NFS-e | NF-e, NFC-e via `sped-nfe`; **NFS-e nacional via a different library, `nfse-nacional/nfse-php`** (see `references/nfse-nacional-direct.md`) |
 | Response pattern | Poll until terminal | Poll until terminal | Sync per SEFAZ call |
 | Contingência/EPEC | Not exposed | Not exposed | Yes — the only one of the three |
 | Best fit | Fastest to integrate, low fiscal domain knowledge needed | Same, plus optional server-side tax calculation | No per-document vendor fee, more control, but you own CFOP/CST/XML correctness |
@@ -257,6 +257,11 @@ a spec to port against even in another language.
   anonymized XML fixture, test), the DANFE and the NFC-e cupom templates, and the
   wiring that picks the template per document. Start here when the user needs
   the PDF of a note; its README says what is a verified clone and what is not.
+- `references/nfse-nacional-direct.md` — how the national NFS-e is emitted
+  directly (no vendor) with `nfse-nacional/nfse-php`: engine selection, flow,
+  DPS field mapping with the real ADN rejections (`E0120`, `E0128`, `E0625`,
+  `E0712`, `E1235`), key vs. `Id`, query/cancel event `101101`, local DANFSe.
+  Read it before promising NFS-e without a vendor.
 - `references/danfse-clone.md` — how to clone an official auxiliary document
   (worked example: the DANFSe v2.0 of the national NFS-e) so it matches the
   government's PDF: extract geometry/fonts/QR with `mupdf`, rebuild by baseline

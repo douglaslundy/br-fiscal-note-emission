@@ -102,6 +102,10 @@ always "use NFC-e instead, SAT is being retired," not "integrate with SAT."
 
 ## NFS-e is mid-transition to a national standard — this changes over time
 
+> Issuing the national NFS-e **directly** (no vendor) is possible with the
+> `nfse-nacional/nfse-php` package — see `nfse-nacional-direct.md` for the flow,
+> DPS mapping and real ADN rejections.
+
 `domain-concepts.md` describes NFS-e as fragmented across hundreds of
 município-specific layouts with no single national standard. That's true
 historically, but Brazil is actively rolling out **NFS-e Nacional** (the
